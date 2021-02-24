@@ -1,0 +1,62 @@
+version: '3'
+services:
+
+  #PHP Service
+  laravel8_app:
+    build:
+      context: .
+    image: kms/api_laravel8
+    container_name: laravel8_app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/local/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - laravel8-app-network
+
+  #Nginx Service
+  laravel8_webserver:
+    image: nginx:alpine
+    container_name: laravel8_webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8888:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/local/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - laravel8-app-network
+
+  #MySQL Service
+  laravel8_db:
+    image: mysql:5.7.22
+    container_name: laravel8_db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "33077:3306"
+    environment:
+      MYSQL_DATABASE: laravel
+      MYSQL_ROOT_PASSWORD: secretPASSWORD
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - laravel8_dbdata:/var/lib/mysql/
+      - ./docker/local/mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - laravel8-app-network
+
+#Docker Networks
+networks:
+  laravel8-app-network:
+    driver: bridge
+#Volumes
+volumes:
+  laravel8_dbdata:
+    driver: local
